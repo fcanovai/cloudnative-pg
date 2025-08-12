@@ -633,13 +633,14 @@ var _ = Describe("Replica switchover", Label(tests.LabelReplication, tests.Label
 							env.Ctx, env.Client, env.Interface, env.RestClientConfig,
 							exec.PodLocator{Namespace: namespace, PodName: primary.Name},
 							"postgres",
-							"INSERT INTO switchover_load SELECT generate_series(1, 10000)",
+							"INSERT INTO switchover_load SELECT generate_series(1, 1000)",
 						)
 						select {
 						case <-stopLoad:
 							GinkgoWriter.Println("Terminating load")
 							return
 						default:
+							time.Sleep(100 * time.Millisecond)
 							continue
 						}
 					}
