@@ -176,15 +176,19 @@ var _ = Describe("Volume space unavailable", Label(tests.LabelStorage), func() {
 		})
 		By("writing some WAL", func() {
 			query := "CHECKPOINT; SELECT pg_catalog.pg_switch_wal(); CHECKPOINT"
-			_, _, err := exec.QueryInInstancePod(
-				env.Ctx, env.Client, env.Interface, env.RestClientConfig,
-				exec.PodLocator{
-					Namespace: primaryPod.Namespace,
-					PodName:   primaryPod.Name,
-				},
-				postgres.PostgresDBName,
-				query)
-			Expect(err).NotTo(HaveOccurred())
+			Eventually(func(g Gomega) {
+				// The query should succeed, as the primary is ready. We wrap in an "eventually"
+				// to avoid API server flakiness
+				_, _, err := exec.QueryInInstancePod(
+					env.Ctx, env.Client, env.Interface, env.RestClientConfig,
+					exec.PodLocator{
+						Namespace: primaryPod.Namespace,
+						PodName:   primaryPod.Name,
+					},
+					postgres.PostgresDBName,
+					query)
+				g.Expect(err).ToNot(HaveOccurred())
+			}).WithTimeout(2 * time.Minute).Should(Succeed())
 		})
 	}
 
